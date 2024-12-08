@@ -13,7 +13,7 @@ static int32_t row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID
 
 int main() {
     stdio_init_all();
-
+    
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
@@ -122,21 +122,23 @@ int main() {
     lv_obj_set_style_text_font(task_due_date, &roboto_bold_14, LV_PART_MAIN);
     lv_label_set_text(task_due_date, "Nov 26 · Tuesday · Today");
 
-    lv_obj_t *right_side = lv_obj_create(main_container);
-    lv_obj_add_style(right_side, &style_default, 0);
-    lv_obj_set_flex_grow(right_side, 1);
-    lv_obj_set_size(right_side, lv_pct(100), lv_pct(100));
-    lv_obj_set_style_bg_color(right_side, INKY_WHITE, LV_PART_MAIN);
-    lv_obj_add_event_cb(right_side, draw_calendar_template, LV_EVENT_DRAW_MAIN, NULL);
-    
-    lv_obj_update_layout(right_side);
+    lv_obj_t *calendar = lv_obj_create(main_container);
+    lv_obj_add_style(calendar, &style_default, 0);
+    lv_obj_set_flex_grow(calendar, 1);
+    lv_obj_set_size(calendar, lv_pct(100), lv_pct(100));
+    lv_obj_set_style_bg_color(calendar, INKY_WHITE, LV_PART_MAIN);
+    lv_obj_add_event_cb(calendar, draw_calendar_template, LV_EVENT_DRAW_MAIN, NULL);
+    lv_obj_set_scrollbar_mode(calendar, LV_SCROLLBAR_MODE_OFF);
+
+    lv_obj_update_layout(calendar);
 
     calendar_init();
 
     std::vector<event> test_events;
-    test_events.push_back(event(0, 0, 830, 0, 1100, "test"));
+    test_events.push_back(event(0, 0, 830, 1, 1145, "Testing event 1234567890"));
+    test_events.push_back(event(0, 0, 900, 0, 1300, "An overlapping event"));
 
-    draw_events(right_side, test_events);
+    draw_events(calendar, test_events);
 
     lv_task_handler_callback();
     

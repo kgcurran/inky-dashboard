@@ -2,29 +2,34 @@
 #include <vector>
 #include <ctime>
 #include <algorithm>
+#include <cmath>
 
 static const int min_time = 800;
 static const int max_time = 1800;
 static const int32_t left_margin = 16;
 static const int32_t top_margin = 22;
-static const int32_t event_vert_padding = 2;
-static const int32_t event_horz_padding = 1;
+static const int32_t event_horz_gap = 1;
+static const int32_t event_pad_all = 3;
 static const int32_t column_right_padding = 5;
 
 static lv_style_t event_style_default;
 
+double time_diff_hours(int start_time, int end_time) {
+    return ((end_time / 100) - (start_time / 100)) + ((end_time % 100) - (start_time % 100)) / 60.0;
+}
+
 void calendar_init() {
     lv_style_init(&event_style_default);
-    lv_style_set_pad_all(&event_style_default, 0);
+    lv_style_set_pad_all(&event_style_default, event_pad_all);
     lv_style_set_margin_all(&event_style_default, 0);
     lv_style_set_border_width(&event_style_default, 0);
     lv_style_set_outline_width(&event_style_default, 0);    
-    lv_style_set_radius(&event_style_default, 3);
+    lv_style_set_radius(&event_style_default, 0);
 }
 
 static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, int width_denominator, int column_index, char *text) {
     start_time = std::max(start_time, min_time);
-    end_time = std::min(end_time, max_time + 2);
+    end_time = std::min(end_time, max_time + 200);
 
     lv_area_t coords;
     lv_obj_get_content_coords(parent, &coords);
@@ -34,20 +39,28 @@ static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, 
 
     int32_t col_width = (calendar_width - left_margin) / 2;
     int32_t day_width = (calendar_width - left_margin) / 2 - column_right_padding; // add some right padding to column
-    int32_t event_width = day_width / width_denominator;
+    int32_t event_col_width = day_width / width_denominator;
     int32_t hour_height = (calendar_height - top_margin) / ((max_time - min_time) / 100 + 1);
+
+    int32_t event_width = event_col_width - event_horz_gap * 2;
+    int32_t event_height = hour_height * time_diff_hours(start_time, end_time);
+
+    int32_t event_xpos = left_margin + col_width * day + event_col_width * column_index + event_horz_gap;
+    int32_t event_ypos = coords.y1 + top_margin + hour_height * time_diff_hours(min_time, start_time);
 
     lv_obj_t *event_obj = lv_obj_create(parent);
     lv_obj_add_style(event_obj, &event_style_default, LV_PART_MAIN);
-    lv_obj_set_size(event_obj, event_width - event_horz_padding * 2, (int) (hour_height * (end_time - start_time) / 100.0) - event_vert_padding * 2);
-    lv_obj_set_pos(event_obj, left_margin + col_width * day + event_width * column_index + event_horz_padding, coords.y1 + top_margin + (int) (hour_height * (start_time - min_time) / 100.0) + event_vert_padding);
+    lv_obj_set_size(event_obj, event_width, event_height);
+    lv_obj_set_pos(event_obj, event_xpos, event_ypos);
 
     lv_obj_set_style_bg_color(event_obj, INKY_RED, LV_PART_MAIN);
 
     lv_obj_t *event_label = lv_label_create(event_obj);
-    lv_obj_set_style_text_color(event_label, INKY_BLACK, LV_PART_MAIN);
-    lv_obj_set_style_text_font(event_label, &roboto_regular_18, LV_PART_MAIN);
+    lv_obj_set_style_text_color(event_label, INKY_WHITE, LV_PART_MAIN);
+    lv_obj_set_style_text_font(event_label, &roboto_regular_12, LV_PART_MAIN);
+    lv_obj_set_size(event_label, event_width - event_pad_all * 2, event_height - event_pad_all * 2);
     lv_label_set_text(event_label, text);
+    lv_label_set_long_mode(event_label, LV_LABEL_LONG_DOT);
 }
 
 static void draw_event(lv_obj_t *parent, const draw_record &record) {
@@ -70,7 +83,7 @@ void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
             if(i == x.end_day) {
                 end_time = x.end_time;
             } else {
-                end_time = 24;
+                end_time = 2400;
             }
 
             draw_records.push_back({i, start_time, end_time, 1, 0, x.text});
@@ -183,7 +196,7 @@ static void draw_grid_lines(lv_obj_t *obj, lv_layer_t *layer) {
     const int hour_cell_count = (max_time - min_time) / 100 + 1;
 
     int32_t font_height = lv_font_get_line_height(side_label_dsc.font);
-    int32_t hour_height = ((height - top_margin) / hour_cell_count);
+    int32_t hour_height = (height - top_margin) / hour_cell_count;
     
     // draw hour lines
     for(int i = 0; i <= hour_cell_count; i++) {

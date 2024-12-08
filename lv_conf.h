@@ -579,6 +579,8 @@
 #define LV_FONT_CUSTOM_DECLARE  \
 LV_FONT_DECLARE(roboto_light_10) \
 LV_FONT_DECLARE(roboto_light_12) \
+LV_FONT_DECLARE(roboto_regular_12) \
+LV_FONT_DECLARE(roboto_regular_14) \
 LV_FONT_DECLARE(roboto_regular_18) \
 LV_FONT_DECLARE(roboto_regular_20) \
 LV_FONT_DECLARE(roboto_medium_14) \
