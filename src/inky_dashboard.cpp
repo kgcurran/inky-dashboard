@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <nlohmann/json.hpp>
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
 #include "lvgl/lvgl.h"
@@ -11,9 +12,11 @@ static uint LED_PIN = 6;
 static int32_t column_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
 static int32_t row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
 
+using json = nlohmann::json;
+
 int main() {
     stdio_init_all();
-    
+
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
@@ -132,13 +135,22 @@ int main() {
 
     lv_obj_update_layout(calendar);
 
-    calendar_init();
+    json calendar_data = {
+        {"dh", {"Sunday, Dec 8", "Monday, Dec 9"}},
+        {"ev", {
+            {
+                {"co", 0},
+                {"sd", 0},
+                {"st", 830},
+                {"ed", 1},
+                {"et", 1145},
+                {"txt", "Hello"}
+            }
+        }}
+    };
 
-    std::vector<event> test_events;
-    test_events.push_back(event(0, 0, 830, 1, 1145, "Testing event 1234567890"));
-    test_events.push_back(event(0, 0, 900, 0, 1300, "An overlapping event"));
-
-    draw_events(calendar, test_events);
+    calendar_init(calendar_data);
+    draw_events(calendar);
 
     lv_task_handler_callback();
     

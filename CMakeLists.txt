@@ -63,6 +63,9 @@ pico_set_program_version(inky_dashboard "0.1")
 pico_enable_stdio_uart(inky_dashboard 0)
 pico_enable_stdio_usb(inky_dashboard 0)
 
+# Add json
+add_subdirectory(json)
+
 # Add include directories
 target_include_directories(inky_dashboard PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/src
@@ -78,6 +81,7 @@ target_link_libraries(inky_dashboard
     pico_graphics
     lvgl
     psram_display
+    nlohmann_json::nlohmann_json
     -Wl,--gc-sections
 )
 
