@@ -22,7 +22,7 @@ void calendar_init() {
     lv_style_set_radius(&event_style_default, 3);
 }
 
-static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, int width_denominator, int column_index) {
+static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, int width_denominator, int column_index, char *text) {
     start_time = std::max(start_time, min_time);
     end_time = std::min(end_time, max_time + 2);
 
@@ -43,10 +43,15 @@ static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, 
     lv_obj_set_pos(event_obj, left_margin + col_width * day + event_width * column_index + event_horz_padding, coords.y1 + top_margin + (int) (hour_height * (start_time - min_time) / 100.0) + event_vert_padding);
 
     lv_obj_set_style_bg_color(event_obj, INKY_RED, LV_PART_MAIN);
+
+    lv_obj_t *event_label = lv_label_create(event_obj);
+    lv_obj_set_style_text_color(event_label, INKY_BLACK, LV_PART_MAIN);
+    lv_obj_set_style_text_font(event_label, &roboto_regular_18, LV_PART_MAIN);
+    lv_label_set_text(event_label, text);
 }
 
 static void draw_event(lv_obj_t *parent, const draw_record &record) {
-    draw_event(parent, record.day, record.start_time, record.end_time, record.width_denominator, record.column_index);
+    draw_event(parent, record.day, record.start_time, record.end_time, record.width_denominator, record.column_index, record.text);
 }
 
 void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
@@ -68,7 +73,7 @@ void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
                 end_time = 24;
             }
 
-            draw_records.push_back({i, start_time, end_time});
+            draw_records.push_back({i, start_time, end_time, 1, 0, x.text});
         }
     }
     
@@ -123,7 +128,7 @@ void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
 
         for(int i = 0; i < columns.size(); ++i) {
             if(start_time < column_end_times[i]) {
-                columns[i].back().width_denominator = overlap_count;
+                columns[i].back().width_denominator = std::max(overlap_count, columns[i].back().width_denominator);
             }
         }
 

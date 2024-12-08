@@ -134,11 +134,7 @@ int main() {
     calendar_init();
 
     std::vector<event> test_events;
-    test_events.push_back(event(0, 0, 800, 0, 1800));
-    test_events.push_back(event(0, 0, 900, 0, 1400));
-    test_events.push_back(event(0, 0, 1500, 1, 1600));
-    test_events.push_back(event(0, 1, 1300, 1, 1500));
-    test_events.push_back(event(0, 1, 1700, 1, 1800));
+    test_events.push_back(event(0, 0, 830, 0, 1100, "test"));
 
     draw_events(right_side, test_events);
 

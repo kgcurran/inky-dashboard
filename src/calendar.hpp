@@ -12,6 +12,7 @@
 struct draw_record {
     int day, start_time, end_time;
     int width_denominator = 1, column_index = 0;
+    char *text;
 };
 
 struct event {
@@ -20,13 +21,15 @@ struct event {
     int start_time;
     int end_day;
     int end_time;
+    char *text;
 
-    event(int calendar_index, int start_day, int start_time, int end_day, int end_time) {
+    event(int calendar_index, int start_day, int start_time, int end_day, int end_time, char *text) {
         this->calendar_index = calendar_index;
         this->start_day = start_day;
         this->start_time = start_time;
         this->end_day = end_day;
         this->end_time = end_time;
+        this->text = text;
     }
 };
 
