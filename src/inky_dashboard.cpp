@@ -50,6 +50,7 @@ int main() {
     lv_obj_set_size(main_container, lv_pct(100), lv_pct(100));
     lv_obj_set_flex_flow(main_container, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_gap(main_container, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(main_container, INKY_WHITE, LV_PART_MAIN);
 
     lv_obj_t *left_side = lv_obj_create(main_container);
     lv_obj_add_style(left_side, &style_default, 0);
@@ -126,16 +127,24 @@ int main() {
     lv_obj_set_flex_grow(right_side, 1);
     lv_obj_set_size(right_side, lv_pct(100), lv_pct(100));
     lv_obj_set_style_bg_color(right_side, INKY_WHITE, LV_PART_MAIN);
-    lv_obj_add_event_cb(right_side, draw_calendar, LV_EVENT_DRAW_MAIN, NULL);
+    lv_obj_add_event_cb(right_side, draw_calendar_template, LV_EVENT_DRAW_MAIN, NULL);
     
     lv_obj_update_layout(right_side);
 
-    draw_event(right_side, 0, 11, 1);
+    calendar_init();
+
+    std::vector<event> test_events;
+    test_events.push_back(event(0, 0, 800, 0, 1800));
+    test_events.push_back(event(0, 0, 900, 0, 1400));
+    test_events.push_back(event(0, 0, 1500, 1, 1600));
+    test_events.push_back(event(0, 1, 1300, 1, 1500));
+    test_events.push_back(event(0, 1, 1700, 1, 1800));
+
+    draw_events(right_side, test_events);
 
     lv_task_handler_callback();
     
     while (true) {
-        printf("Hello, world!\n");
         sleep_ms(1000);
     }
 

@@ -582,6 +582,7 @@ LV_FONT_DECLARE(roboto_light_12) \
 LV_FONT_DECLARE(roboto_regular_18) \
 LV_FONT_DECLARE(roboto_regular_20) \
 LV_FONT_DECLARE(roboto_medium_14) \
+LV_FONT_DECLARE(roboto_medium_16) \
 LV_FONT_DECLARE(roboto_bold_14) \
 LV_FONT_DECLARE(roboto_bold_30) \
 LV_FONT_DECLARE(roboto_black_64)
