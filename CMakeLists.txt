@@ -55,13 +55,13 @@ target_include_directories(lvgl PUBLIC
 add_subdirectory(${PIMORONI_PICO_PATH}/drivers inky73)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries pico_graphics)
 
-add_executable(inky_dashboard src/inky_dashboard.cpp src/inky_interface.cpp src/calendar.cpp)
+add_executable(inky_dashboard src/inky_dashboard.cpp src/inky_interface.cpp src/calendar.cpp src/net.cpp)
 
 pico_set_program_name(inky_dashboard "inky_dashboard")
 pico_set_program_version(inky_dashboard "0.1")
 
 pico_enable_stdio_uart(inky_dashboard 0)
-pico_enable_stdio_usb(inky_dashboard 0)
+pico_enable_stdio_usb(inky_dashboard 1)
 
 # Add json
 add_subdirectory(json)
@@ -75,8 +75,11 @@ target_include_directories(inky_dashboard PRIVATE
 
 # Link libraries
 target_link_libraries(inky_dashboard
+    pico_cyw43_arch_lwip_threadsafe_background
     pico_stdlib
-    pico_cyw43_arch_none
+    hardware_spi
+    pico_lwip
+    pico_lwip_http
     inky73
     pico_graphics
     lvgl

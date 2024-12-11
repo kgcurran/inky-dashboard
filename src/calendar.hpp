@@ -1,14 +1,9 @@
 #ifndef CALENDAR_T
-
 #define CALENDAR_T
 
-#include <ctime>
 #include <string>
-#include <stdlib.h>
-#include <vector>
-#include "lvgl/lvgl.h"
-#include "inky_interface.hpp"
 #include <nlohmann/json.hpp>
+#include "lvgl/lvgl.h"
 
 using string = std::string;
 using json = nlohmann::json;
@@ -41,8 +36,8 @@ struct rect {
     int x, y, w, h;
 };
 
-void calendar_init(const json &calendar_data);
-void draw_events(lv_obj_t *parent);
-void draw_calendar_template(lv_event_t *);
+void cal_init(const json &calendar_data);
+void cal_draw_events(lv_obj_t *parent);
+void cal_draw_template(lv_event_t *);
 
 #endif

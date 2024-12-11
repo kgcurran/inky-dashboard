@@ -1,9 +1,10 @@
 #include "calendar.hpp"
-#include <vector>
-#include <ctime>
-#include <algorithm>
+#include "inky_interface.hpp"
 #include <cmath>
 #include <string>
+#include <stdlib.h>
+#include <vector>
+#include <ctime>
 
 static const int min_time = 800;
 static const int max_time = 1800;
@@ -24,7 +25,7 @@ double time_diff_hours(int start_time, int end_time) {
     return ((end_time / 100) - (start_time / 100)) + ((end_time % 100) - (start_time % 100)) / 60.0;
 }
 
-void calendar_init(const json &calendar_data) {
+void cal_init(const json &calendar_data) {
     lv_style_init(&event_style_default);
     lv_style_set_pad_all(&event_style_default, event_pad_all);
     lv_style_set_margin_all(&event_style_default, 0);
@@ -193,7 +194,7 @@ static void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
     current_day = iter->day;
 }
 
-void draw_events(lv_obj_t *parent) {
+void cal_draw_events(lv_obj_t *parent) {
     draw_events(parent, events);
 }
 
@@ -269,7 +270,7 @@ static void draw_header_label(lv_obj_t *obj, lv_layer_t *layer, int day, const c
     lv_draw_label(layer, &header_label, &header_area);
 }
 
-void draw_calendar_template(lv_event_t *e) {
+void cal_draw_template(lv_event_t *e) {
     lv_obj_t *obj = lv_event_get_target_obj(e);
     lv_layer_t *layer = lv_event_get_layer(e);
 

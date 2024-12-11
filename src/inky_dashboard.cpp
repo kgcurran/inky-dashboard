@@ -1,52 +1,54 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <nlohmann/json.hpp>
+#include "inky_dashboard.hpp"
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+
 #include "lvgl/lvgl.h"
 #include "inky_interface.hpp"
 #include "calendar.hpp"
+#include "net.hpp"
 
 static uint LED_PIN = 6;
 
-static int32_t column_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-static int32_t row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+static lv_style_t style_default;
 
 using json = nlohmann::json;
 
-int main() {
-    stdio_init_all();
-
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-
-    if (cyw43_arch_init()) {
-        printf("Wi-Fi init failed\n");
-        return -1;
-    }
-
-    lv_init();
-
-    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-
+void init_display() {
     lv_display_t *display = lv_display_create(800, 480);
-    static lv_color_t buf1[800 * 20];
-    lv_display_set_buffers(display, buf1, NULL, sizeof(buf1), LV_DISP_RENDER_MODE_PARTIAL);
+    lv_color_t *buf1 = (lv_color_t *) malloc(800 * 20 * sizeof(lv_color_t));
+
+    lv_display_set_buffers(display, buf1, NULL, 800 * 20 * sizeof(lv_color_t), LV_DISP_RENDER_MODE_PARTIAL);
     lv_display_set_flush_cb(display, inky_flush_cb);
 
     lv_display_set_color_format(display, LV_COLOR_FORMAT_L8);
     lv_display_set_antialiasing(display, false);
     
-    static lv_style_t style_default;
     lv_style_init(&style_default);
     lv_style_set_pad_all(&style_default, 0);
     lv_style_set_margin_all(&style_default, 0);
     lv_style_set_border_width(&style_default, 0);
     lv_style_set_outline_width(&style_default, 0);
     lv_style_set_radius(&style_default, 0);
+    lv_style_set_bg_color(&style_default, INKY_WHITE);
+}
 
-    lv_obj_t *scr = lv_scr_act();
-    lv_obj_add_style(scr, &style_default, 0);
+void draw_text_screen(lv_obj_t *scr, const string message) {
+    lv_obj_set_flex_flow(scr, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(scr, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t *error_label = lv_label_create(scr);
+    lv_label_set_text(error_label, message.c_str());
+    lv_obj_set_size(error_label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_text_font(error_label, &roboto_regular_20, LV_PART_MAIN);
+    lv_obj_set_style_text_color(error_label, INKY_BLACK, LV_PART_MAIN);
+    lv_obj_set_style_margin_all(error_label, 8, LV_PART_MAIN);
+}
+
+void draw_gui(lv_obj_t *scr, const json& payload) {
+    const auto &cal = payload["cal"];
 
     lv_obj_t *main_container = lv_obj_create(scr);
     lv_obj_add_style(main_container, &style_default, 0);
@@ -130,27 +132,46 @@ int main() {
     lv_obj_set_flex_grow(calendar, 1);
     lv_obj_set_size(calendar, lv_pct(100), lv_pct(100));
     lv_obj_set_style_bg_color(calendar, INKY_WHITE, LV_PART_MAIN);
-    lv_obj_add_event_cb(calendar, draw_calendar_template, LV_EVENT_DRAW_MAIN, NULL);
+    lv_obj_add_event_cb(calendar, cal_draw_template, LV_EVENT_DRAW_MAIN, NULL);
     lv_obj_set_scrollbar_mode(calendar, LV_SCROLLBAR_MODE_OFF);
 
     lv_obj_update_layout(calendar);
 
-    json calendar_data = {
-        {"dh", {"Sunday, Dec 8", "Monday, Dec 9"}},
-        {"ev", {
-            {
-                {"co", 0},
-                {"sd", 0},
-                {"st", 830},
-                {"ed", 1},
-                {"et", 1145},
-                {"txt", "Hello"}
-            }
-        }}
-    };
+    cal_init(cal);
+    cal_draw_events(calendar);
+}
 
-    calendar_init(calendar_data);
-    draw_events(calendar);
+int connect_wifi() {
+    for(int i = 0; i < 5; ++i) {
+        if(!cyw43_arch_wifi_connect_timeout_ms(SSID, PASS, CYW43_AUTH_WPA2_AES_PSK, 10000)) return 0;
+    }
+    
+    return -1;
+}
+
+int main() {
+    stdio_init_all();
+
+    gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+
+    if (cyw43_arch_init()) {
+        return -1;
+    }
+
+    lv_init();
+    init_display();
+
+    lv_obj_t *scr = lv_scr_act();
+    lv_obj_add_style(scr, &style_default, 0);
+
+    cyw43_arch_enable_sta_mode();
+    if (connect_wifi()) {
+        draw_text_screen(scr, "Error: Wi-Fi connection failed.\nSSID: " + string(SSID));
+    } else {
+        json payload = net_fetch_payload();
+        draw_gui(scr, payload);
+    }
 
     lv_task_handler_callback();
     
