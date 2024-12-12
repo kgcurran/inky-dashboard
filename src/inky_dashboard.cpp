@@ -86,9 +86,45 @@ void draw_header(lv_obj_t *parent, const json& payload) {
     lv_label_set_text(month_year_text, subtitle.c_str());
 }
 
+void draw_todo_list(lv_obj_t *parent, const json& payload) {
+    for(const auto &task_json : payload) {
+        string text = task_json["txt"];
+        string subtext = task_json["sub"];
+
+        lv_obj_t *todo_list_item = lv_obj_create(parent);
+        lv_obj_add_style(todo_list_item, &style_default, 0);
+        lv_obj_set_style_size(todo_list_item, lv_pct(100), LV_SIZE_CONTENT, LV_PART_MAIN);
+        lv_obj_set_flex_flow(todo_list_item, LV_FLEX_FLOW_ROW);
+        lv_obj_set_style_pad_gap(todo_list_item, 5, LV_PART_MAIN);
+        lv_obj_set_style_pad_ver(todo_list_item, 8, LV_PART_MAIN);
+        lv_obj_set_style_pad_hor(todo_list_item, 8, LV_PART_MAIN);
+        lv_obj_set_style_border_side(todo_list_item, LV_BORDER_SIDE_BOTTOM, LV_PART_MAIN);
+        lv_obj_set_style_border_width(todo_list_item, 1, LV_PART_MAIN);
+        lv_obj_set_style_border_color(todo_list_item, INKY_BLACK, LV_PART_MAIN);
+    
+        lv_obj_t *task_name = lv_label_create(todo_list_item);
+        lv_obj_set_style_text_color(task_name, INKY_BLACK, LV_PART_MAIN);
+        lv_obj_set_style_text_font(task_name, &roboto_regular_18, LV_PART_MAIN);
+        lv_label_set_text(task_name, text.c_str());
+        lv_obj_set_width(task_name, lv_pct(100));
+        lv_label_set_long_mode(task_name, LV_LABEL_LONG_DOT);
+
+        lv_obj_t *task_details = lv_obj_create(todo_list_item);
+        lv_obj_add_style(task_details, &style_default, 0);
+        lv_obj_set_style_size(task_details, lv_pct(100), LV_SIZE_CONTENT, LV_PART_MAIN);
+        lv_obj_set_flex_flow(todo_list_item, LV_FLEX_FLOW_COLUMN);
+
+        lv_obj_t *task_due_date = lv_label_create(task_details);
+        lv_obj_set_style_text_color(task_due_date, INKY_BLACK, LV_PART_MAIN);
+        lv_obj_set_style_text_font(task_due_date, &roboto_bold_14, LV_PART_MAIN);
+        lv_label_set_text(task_due_date, subtext.c_str());
+    }
+}
+
 void draw_gui(lv_obj_t *scr, const json& payload) {
     const auto &cal = payload["cal"];
     const auto &header = payload["hd"];
+    const auto &todo = payload["tsk"];
 
     lv_obj_t *main_container = lv_obj_create(scr);
     lv_obj_add_style(main_container, &style_default, 0);
@@ -107,32 +143,7 @@ void draw_gui(lv_obj_t *scr, const json& payload) {
     lv_obj_set_style_pad_gap(left_side, 0, LV_PART_MAIN);
 
     draw_header(left_side, header);
-
-    lv_obj_t *todo_list_item = lv_obj_create(left_side);
-    lv_obj_add_style(todo_list_item, &style_default, 0);
-    lv_obj_set_style_size(todo_list_item, lv_pct(100), LV_SIZE_CONTENT, LV_PART_MAIN);
-    lv_obj_set_flex_flow(todo_list_item, LV_FLEX_FLOW_ROW);
-    lv_obj_set_style_pad_gap(todo_list_item, 5, LV_PART_MAIN);
-    lv_obj_set_style_pad_ver(todo_list_item, 8, LV_PART_MAIN);
-    lv_obj_set_style_pad_hor(todo_list_item, 8, LV_PART_MAIN);
-    lv_obj_set_style_border_side(todo_list_item, LV_BORDER_SIDE_BOTTOM, LV_PART_MAIN);
-    lv_obj_set_style_border_width(todo_list_item, 1, LV_PART_MAIN);
-    lv_obj_set_style_border_color(todo_list_item, INKY_BLACK, LV_PART_MAIN);
-
-    lv_obj_t *task_name = lv_label_create(todo_list_item);
-    lv_obj_set_style_text_color(task_name, INKY_BLACK, LV_PART_MAIN);
-    lv_obj_set_style_text_font(task_name, &roboto_regular_18, LV_PART_MAIN);
-    lv_label_set_text(task_name, "Project 5 - Dynamic Memory");
-
-    lv_obj_t *task_details = lv_obj_create(todo_list_item);
-    lv_obj_add_style(task_details, &style_default, 0);
-    lv_obj_set_style_size(task_details, lv_pct(100), LV_SIZE_CONTENT, LV_PART_MAIN);
-    lv_obj_set_flex_flow(todo_list_item, LV_FLEX_FLOW_COLUMN);
-
-    lv_obj_t *task_due_date = lv_label_create(task_details);
-    lv_obj_set_style_text_color(task_due_date, INKY_BLACK, LV_PART_MAIN);
-    lv_obj_set_style_text_font(task_due_date, &roboto_bold_14, LV_PART_MAIN);
-    lv_label_set_text(task_due_date, "Nov 26 · Tuesday · Today");
+    draw_todo_list(left_side, todo);
 
     lv_obj_t *calendar = lv_obj_create(main_container);
     lv_obj_add_style(calendar, &style_default, 0);
