@@ -10,8 +10,6 @@
 #include "calendar.hpp"
 #include "net.hpp"
 
-static uint LED_PIN = 6;
-
 static lv_style_t style_default;
 
 using json = nlohmann::json;
@@ -47,8 +45,50 @@ void draw_text_screen(lv_obj_t *scr, const string message) {
     lv_obj_set_style_margin_all(error_label, 8, LV_PART_MAIN);
 }
 
+void draw_header(lv_obj_t *parent, const json& payload) {
+    string day = payload["d"];
+    string day_of_week = payload["w"];
+    string subtitle = payload["s"];
+
+    lv_obj_t *date_header = lv_obj_create(parent);
+    lv_obj_add_style(date_header, &style_default, 0);
+    lv_obj_set_style_size(date_header, lv_pct(100), LV_SIZE_CONTENT, LV_PART_MAIN);
+    lv_obj_set_flex_flow(date_header, LV_FLEX_FLOW_ROW);
+    lv_obj_set_style_bg_color(date_header, INKY_BLACK, LV_PART_MAIN);
+    lv_obj_set_style_flex_cross_place(date_header, LV_FLEX_ALIGN_CENTER, LV_PART_MAIN);
+    lv_obj_set_style_pad_left(date_header, 15, LV_PART_MAIN);
+    lv_obj_set_style_pad_gap(date_header, 10, LV_PART_MAIN);
+
+    lv_obj_t *day_of_month = lv_label_create(date_header);
+    lv_obj_set_style_text_font(day_of_month, &roboto_black_64, LV_PART_MAIN);
+    lv_obj_set_style_text_color(day_of_month, INKY_WHITE, LV_PART_MAIN);
+    lv_label_set_text(day_of_month, day.c_str());
+    lv_obj_set_style_pad_top(day_of_month, 5, LV_PART_MAIN);
+
+    lv_obj_t *date_text = lv_obj_create(date_header);
+    lv_obj_add_style(date_text, &style_default, 0);
+    lv_obj_set_width(date_text, LV_SIZE_CONTENT);
+    lv_obj_set_height(date_text, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_color(date_text, INKY_BLACK, LV_PART_MAIN);
+    lv_obj_set_flex_flow(date_text, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_gap(date_text, 0, LV_PART_MAIN);
+
+    lv_obj_t *day_of_week_text = lv_label_create(date_text);
+    lv_obj_remove_style_all(day_of_week_text);
+    lv_obj_set_style_text_color(day_of_week_text, INKY_WHITE, LV_PART_MAIN);
+    lv_obj_set_style_text_font(day_of_week_text, &roboto_bold_30, LV_PART_MAIN);
+    lv_label_set_text(day_of_week_text, day_of_week.c_str());
+
+    lv_obj_t *month_year_text = lv_label_create(date_text);
+    lv_obj_remove_style_all(month_year_text);
+    lv_obj_set_style_text_color(month_year_text, INKY_WHITE, LV_PART_MAIN);
+    lv_obj_set_style_text_font(month_year_text, &roboto_regular_20, LV_PART_MAIN);
+    lv_label_set_text(month_year_text, subtitle.c_str());
+}
+
 void draw_gui(lv_obj_t *scr, const json& payload) {
     const auto &cal = payload["cal"];
+    const auto &header = payload["hd"];
 
     lv_obj_t *main_container = lv_obj_create(scr);
     lv_obj_add_style(main_container, &style_default, 0);
@@ -66,40 +106,7 @@ void draw_gui(lv_obj_t *scr, const json& payload) {
     lv_obj_set_style_border_color(left_side, INKY_BLACK, LV_PART_MAIN);
     lv_obj_set_style_pad_gap(left_side, 0, LV_PART_MAIN);
 
-    lv_obj_t *date_header = lv_obj_create(left_side);
-    lv_obj_add_style(date_header, &style_default, 0);
-    lv_obj_set_style_size(date_header, lv_pct(100), LV_SIZE_CONTENT, LV_PART_MAIN);
-    lv_obj_set_flex_flow(date_header, LV_FLEX_FLOW_ROW);
-    lv_obj_set_style_bg_color(date_header, INKY_BLACK, LV_PART_MAIN);
-    lv_obj_set_style_flex_cross_place(date_header, LV_FLEX_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_set_style_pad_left(date_header, 15, LV_PART_MAIN);
-    lv_obj_set_style_pad_gap(date_header, 10, LV_PART_MAIN);
-
-    lv_obj_t *day_of_month = lv_label_create(date_header);
-    lv_obj_set_style_text_font(day_of_month, &roboto_black_64, LV_PART_MAIN);
-    lv_obj_set_style_text_color(day_of_month, INKY_WHITE, LV_PART_MAIN);
-    lv_label_set_text(day_of_month, "25");
-    lv_obj_set_style_pad_top(day_of_month, 5, LV_PART_MAIN);
-
-    lv_obj_t *date_text = lv_obj_create(date_header);
-    lv_obj_add_style(date_text, &style_default, 0);
-    lv_obj_set_width(date_text, LV_SIZE_CONTENT);
-    lv_obj_set_height(date_text, LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_color(date_text, INKY_BLACK, LV_PART_MAIN);
-    lv_obj_set_flex_flow(date_text, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_gap(date_text, 0, LV_PART_MAIN);
-
-    lv_obj_t *day_of_week_text = lv_label_create(date_text);
-    lv_obj_remove_style_all(day_of_week_text);
-    lv_obj_set_style_text_color(day_of_week_text, INKY_WHITE, LV_PART_MAIN);
-    lv_obj_set_style_text_font(day_of_week_text, &roboto_bold_30, LV_PART_MAIN);
-    lv_label_set_text(day_of_week_text, "Monday");
-
-    lv_obj_t *month_year_text = lv_label_create(date_text);
-    lv_obj_remove_style_all(month_year_text);
-    lv_obj_set_style_text_color(month_year_text, INKY_WHITE, LV_PART_MAIN);
-    lv_obj_set_style_text_font(month_year_text, &roboto_regular_20, LV_PART_MAIN);
-    lv_label_set_text(month_year_text, "November 2024");
+    draw_header(left_side, header);
 
     lv_obj_t *todo_list_item = lv_obj_create(left_side);
     lv_obj_add_style(todo_list_item, &style_default, 0);
@@ -142,9 +149,15 @@ void draw_gui(lv_obj_t *scr, const json& payload) {
 }
 
 int connect_wifi() {
+    gpio_put(WIFI_LED, 1);
     for(int i = 0; i < 5; ++i) {
-        if(!cyw43_arch_wifi_connect_timeout_ms(SSID, PASS, CYW43_AUTH_WPA2_AES_PSK, 10000)) return 0;
+        if(!cyw43_arch_wifi_connect_timeout_ms(SSID, PASS, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
+            gpio_put(WIFI_LED, 0);
+            return 0;
+        }
     }
+
+    gpio_put(WIFI_LED, 0);
     
     return -1;
 }
@@ -152,8 +165,10 @@ int connect_wifi() {
 int main() {
     stdio_init_all();
 
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
+    gpio_init(STATUS_LED);
+    gpio_init(WIFI_LED);
+    gpio_set_dir(STATUS_LED, GPIO_OUT);
+    gpio_set_dir(WIFI_LED, GPIO_OUT);
 
     if (cyw43_arch_init()) {
         return -1;

@@ -20,9 +20,6 @@ static err_t internal_recv_fn(void *arg, struct altcp_pcb *pcb, struct pbuf *p, 
     }
     
     const char* data = (const char*)p->payload;
-    for(int i = 0; i < p->len; i++) {
-        printf("%c", data[i]);
-    }
     size_t data_len = p->len;
     
     while (data_len > 0) {
@@ -41,6 +38,8 @@ static void internal_result_fn(void *arg, httpc_result_t httpc_result, u32_t rx_
 }
 
 json net_fetch_payload() {
+    gpio_put(WIFI_LED, 1);
+
     request_done = false;
 
     auto context = cyw43_arch_async_context();
@@ -56,10 +55,11 @@ json net_fetch_payload() {
     async_context_release_lock(context);
 
     while(!request_done) {
-        printf(".");
         async_context_poll(context);
         async_context_wait_for_work_ms(context, 1000);
     }
+
+    gpio_put(WIFI_LED, 0);
 
     return json::from_cbor(recv_buffer);
 }

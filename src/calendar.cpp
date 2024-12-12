@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <vector>
 #include <ctime>
+#include <deque>
+
+using std::min;
+using std::max;
 
 static const int min_time = 800;
 static const int max_time = 1800;
@@ -50,9 +54,9 @@ void cal_init(const json &calendar_data) {
     }
 }
 
-static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, int width_denominator, int column_index, const char *text) {
-    start_time = std::max(start_time, min_time);
-    end_time = std::min(end_time, max_time + 200);
+static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, double width, double offset, const char *text, int color) {
+    start_time = max(start_time, min_time);
+    end_time = min(end_time, max_time + 200);
 
     lv_area_t coords;
     lv_obj_get_content_coords(parent, &coords);
@@ -62,13 +66,13 @@ static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, 
 
     int32_t col_width = (calendar_width - left_margin) / days_count;
     int32_t day_width = (calendar_width - left_margin) / days_count - column_right_padding; // add some right padding to column
-    int32_t event_col_width = day_width / width_denominator;
+    int32_t event_col_width = day_width * width;
     int32_t hour_height = (calendar_height - top_margin) / ((max_time - min_time) / 100 + 1);
 
     int32_t event_width = event_col_width - event_horz_gap * 2;
     int32_t event_height = hour_height * time_diff_hours(start_time, end_time);
 
-    int32_t event_xpos = left_margin + col_width * day + event_col_width * column_index + event_horz_gap;
+    int32_t event_xpos = left_margin + col_width * day + day_width * offset;
     int32_t event_ypos = coords.y1 + top_margin + hour_height * time_diff_hours(min_time, start_time);
 
     lv_obj_t *event_obj = lv_obj_create(parent);
@@ -76,7 +80,7 @@ static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, 
     lv_obj_set_size(event_obj, event_width, event_height);
     lv_obj_set_pos(event_obj, event_xpos, event_ypos);
 
-    lv_obj_set_style_bg_color(event_obj, INKY_RED, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(event_obj, lv_color_make(color, color, color), LV_PART_MAIN);
 
     lv_obj_t *event_label = lv_label_create(event_obj);
     lv_obj_set_style_text_color(event_label, INKY_WHITE, LV_PART_MAIN);
@@ -87,7 +91,47 @@ static void draw_event(lv_obj_t *parent, int day, int start_time, int end_time, 
 }
 
 static void draw_event(lv_obj_t *parent, const draw_record &record) {
-    draw_event(parent, record.day, record.start_time, record.end_time, record.width_denominator, record.column_index, record.text.c_str());
+    draw_event(parent, record.day, record.start_time, record.end_time, record.width, record.offset, record.text.c_str(), record.color);
+}
+
+/*
+* Calculates the layout and width of events in the calendar.
+* The last event in each consecutive group of overlapping events expands to fill the remaining space.
+*/
+static void draw_events(lv_obj_t *parent, std::vector<draw_record> &records) {
+    int n_columns = 1;
+    for(auto &r : records) n_columns = max(n_columns, r.column + 1);
+    double column_width = 1.0 / n_columns;
+
+    records.push_back({0, 2400}); // sentinel
+
+    std::deque<draw_record*> que;
+
+    for(auto &record : records) {
+        int current_time = record.start_time;
+
+        for(auto iter = que.begin(); iter != que.end();) {
+            if((*iter)->end_time <= current_time) {
+                draw_event(parent, **iter);
+                iter = que.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+
+        int overlapping = 0;
+
+        // counts the number of 'active' overlapping events
+        for(auto r : que) {
+            r->width = column_width;
+            ++overlapping;
+        }
+
+        record.width = (n_columns - overlapping) * column_width;
+        record.offset = record.column * column_width;
+
+        que.push_back(&record);
+    }
 }
 
 static void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
@@ -109,7 +153,7 @@ static void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
                 end_time = 2400;
             }
 
-            draw_records.push_back({i, start_time, end_time, 1, 0, x.text});
+            draw_records.push_back({i, start_time, end_time, 0, 1, 0, x.text, x.color});
         }
     }
     
@@ -130,66 +174,50 @@ static void draw_events(lv_obj_t *parent, const std::vector<event> &events) {
 
     // arrange each day separately
     int current_day = start_day;
-    std::vector<std::vector<draw_record>> columns;
+    std::vector<draw_record> records;
     std::vector<int> column_end_times;
 
     auto iter = draw_records.begin();
     while(iter != draw_records.end()) {
         if(iter->day > current_day) {
             // draw all events on previous day
-            for(const auto &column : columns) {
-                for(const auto &draw_record : column) {
-                    draw_event(parent, draw_record);
-                }
-            }
+            draw_events(parent, records);
 
-            columns.clear();
+            records.clear();
             column_end_times.clear();
             current_day = iter->day;
         }
 
-        int placement_column = -1;
         int start_time = iter->start_time;
 
-        int overlap_count = 1;
-        for(int i = 0; i < columns.size(); ++i) {
-            if(start_time >= column_end_times[i] && (placement_column == -1 || start_time - column_end_times[i] < start_time - column_end_times[placement_column])) {
-                placement_column = i;
+        int placement_column = 0;
+        for(int i = 0; i < column_end_times.size(); ++i) {
+            if(start_time >= column_end_times[i]) {
+                break;
             }
-
-            if(start_time < column_end_times[i]) {
-                ++overlap_count;
-            }
+            ++placement_column;
         }
 
-        for(int i = 0; i < columns.size(); ++i) {
-            if(start_time < column_end_times[i]) {
-                columns[i].back().width_denominator = std::max(overlap_count, columns[i].back().width_denominator);
-            }
-        }
+        iter->column = placement_column;
 
-        if(placement_column == -1) {
+        if(placement_column == records.size()) {
             // if there are no columns free, make a new one
-            columns.push_back({});
-            column_end_times.push_back(0);
-            placement_column = columns.size() - 1;
+            records.push_back(*iter);
+            column_end_times.push_back(iter->end_time);
+        } else {
+            records.push_back(*iter);
+            column_end_times[placement_column] = iter->end_time;
         }
 
-        iter->width_denominator = overlap_count;
-        iter->column_index = placement_column;
-        columns[placement_column].push_back(*iter);
-        column_end_times[placement_column] = iter->end_time;
+        printf("%s\t%d\n", iter->text, iter->column);
 
         ++iter;
     }
 
-    for(const auto &column : columns) {
-        for(const auto &draw_record : column) {
-            draw_event(parent, draw_record);
-        }
-    }
+    // resize events to take up as much space as possible, with rightmost events taking up as much space as possible
+    draw_events(parent, records);
 
-    columns.clear();
+    records.clear();
     column_end_times.clear();
     current_day = iter->day;
 }

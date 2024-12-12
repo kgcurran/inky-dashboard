@@ -10,8 +10,10 @@ using json = nlohmann::json;
 
 struct draw_record {
     int day, start_time, end_time;
-    int width_denominator = 1, column_index = 0;
+    int column = 0;
+    double width = 1, offset = 0;
     string text;
+    int color;
 };
 
 struct event {
