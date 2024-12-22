@@ -1,14 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <nlohmann/json.hpp>
 #include "inky_dashboard.hpp"
-#include "pico/stdlib.h"
-#include "pico/cyw43_arch.h"
-
-#include "lvgl/lvgl.h"
 #include "inky_interface.hpp"
 #include "calendar.hpp"
 #include "net.hpp"
+#include "lvgl/lvgl.h"
+#include <nlohmann/json.hpp>
+#include <stdio.h>
+#include <stdlib.h>
 
 static lv_style_t style_default;
 
@@ -159,39 +156,14 @@ void draw_gui(lv_obj_t *scr, const json& payload) {
     cal_draw_events(calendar);
 }
 
-int connect_wifi() {
-    gpio_put(WIFI_LED, 1);
-    for(int i = 0; i < 5; ++i) {
-        if(!cyw43_arch_wifi_connect_timeout_ms(SSID, PASS, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
-            gpio_put(WIFI_LED, 0);
-            return 0;
-        }
-    }
-
-    gpio_put(WIFI_LED, 0);
-    
-    return -1;
-}
-
 int main() {
-    stdio_init_all();
-
-    gpio_init(STATUS_LED);
-    gpio_init(WIFI_LED);
-    gpio_set_dir(STATUS_LED, GPIO_OUT);
-    gpio_set_dir(WIFI_LED, GPIO_OUT);
-
-    if (cyw43_arch_init()) {
-        return -1;
-    }
-
+    if(inky_init()) return -1;
     lv_init();
     init_display();
 
     lv_obj_t *scr = lv_scr_act();
     lv_obj_add_style(scr, &style_default, 0);
 
-    cyw43_arch_enable_sta_mode();
     if (connect_wifi()) {
         draw_text_screen(scr, "Error: Wi-Fi connection failed.\nSSID: " + string(SSID));
     } else {
@@ -201,9 +173,5 @@ int main() {
 
     lv_task_handler_callback();
     
-    while (true) {
-        sleep_ms(1000);
-    }
-
     return 0;
 }

@@ -3,6 +3,7 @@
 #include "pico/async_context.h"
 #include "pico/cyw43_arch.h"
 #include "inky_dashboard.hpp"
+#include "inky_interface.hpp"
 #include <cstring>
 #include <algorithm>
 #include <vector>

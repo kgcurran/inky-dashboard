@@ -51,7 +51,8 @@ target_include_directories(lvgl PUBLIC
     ${CMAKE_CURRENT_LIST_DIR} # Ensure lv_conf.h is found
 )
 
-# Add Pimoroni libraries
+# Add Pimoroni librarie
+add_subdirectory(${PIMORONI_PICO_PATH}/common pimoroni_i2c)
 add_subdirectory(${PIMORONI_PICO_PATH}/drivers inky73)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries pico_graphics)
 
@@ -61,7 +62,7 @@ pico_set_program_name(inky_dashboard "inky_dashboard")
 pico_set_program_version(inky_dashboard "0.1")
 
 pico_enable_stdio_uart(inky_dashboard 0)
-pico_enable_stdio_usb(inky_dashboard 1)
+pico_enable_stdio_usb(inky_dashboard 0)
 
 # Add json
 add_subdirectory(json)
@@ -77,13 +78,17 @@ target_include_directories(inky_dashboard PRIVATE
 target_link_libraries(inky_dashboard
     pico_cyw43_arch_lwip_threadsafe_background
     pico_stdlib
+    pico_util
+    hardware_i2c
+    pimoroni_i2c
     hardware_spi
     pico_lwip
     pico_lwip_http
     inky73
     pico_graphics
-    lvgl
     psram_display
+    pcf85063a
+    lvgl
     nlohmann_json::nlohmann_json
     -Wl,--gc-sections
 )
