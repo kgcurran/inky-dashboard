@@ -1,4 +1,4 @@
-#include "inky_dashboard.hpp"
+#include "settings.hpp"
 #include "inky_interface.hpp"
 #include "calendar.hpp"
 #include "net.hpp"
@@ -158,6 +158,7 @@ void draw_gui(lv_obj_t *scr, const json& payload) {
 
 int main() {
     if(inky_init()) return -1;
+
     lv_init();
     init_display();
 
@@ -172,6 +173,8 @@ int main() {
     }
 
     lv_task_handler_callback();
+
+    inky_sleep(15); // sleep for 15 minutes
     
     return 0;
 }

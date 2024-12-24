@@ -53,8 +53,7 @@ target_include_directories(lvgl PUBLIC
 
 # Add Pimoroni librarie
 add_subdirectory(${PIMORONI_PICO_PATH}/common pimoroni_i2c)
-add_subdirectory(${PIMORONI_PICO_PATH}/drivers inky73)
-add_subdirectory(${PIMORONI_PICO_PATH}/libraries pico_graphics)
+add_subdirectory(${PIMORONI_PICO_PATH}/libraries inky_frame_7)
 
 add_executable(inky_dashboard src/inky_dashboard.cpp src/inky_interface.cpp src/calendar.cpp src/net.cpp)
 
@@ -77,14 +76,14 @@ target_include_directories(inky_dashboard PRIVATE
 # Link libraries
 target_link_libraries(inky_dashboard
     pico_cyw43_arch_lwip_threadsafe_background
-    pico_stdlib
-    pico_util
-    hardware_i2c
-    pimoroni_i2c
-    hardware_spi
     pico_lwip
     pico_lwip_http
     inky73
+    inky_frame_7
+    hardware_pwm
+    hardware_spi
+    hardware_i2c
+    hardware_rtc
     pico_graphics
     psram_display
     pcf85063a

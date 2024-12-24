@@ -18,7 +18,7 @@ constexpr int WIFI_LED = 7;
 
 void inky_flush_cb(lv_display_t *, const lv_area_t *, uint8_t *);
 void lv_task_handler_callback();
-void sleep(int wake_in_minutes);
+void inky_sleep(int wake_in_minutes);
 int connect_wifi();
 int inky_init();
 

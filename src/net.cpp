@@ -1,9 +1,9 @@
 #include "net.hpp"
+#include "settings.hpp"
+#include "inky_interface.hpp"
 #include "lwip/apps/http_client.h"
 #include "pico/async_context.h"
 #include "pico/cyw43_arch.h"
-#include "inky_dashboard.hpp"
-#include "inky_interface.hpp"
 #include <cstring>
 #include <algorithm>
 #include <vector>
@@ -39,8 +39,6 @@ static void internal_result_fn(void *arg, httpc_result_t httpc_result, u32_t rx_
 }
 
 json net_fetch_payload() {
-    gpio_put(WIFI_LED, 1);
-
     request_done = false;
 
     auto context = cyw43_arch_async_context();
@@ -59,8 +57,6 @@ json net_fetch_payload() {
         async_context_poll(context);
         async_context_wait_for_work_ms(context, 1000);
     }
-
-    gpio_put(WIFI_LED, 0);
 
     return json::from_cbor(recv_buffer);
 }
