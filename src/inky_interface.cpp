@@ -59,7 +59,12 @@ int inky_init() {
 
 void lv_task_handler_callback() {
     lv_timer_handler();
-    frame.led(InkyFrame::LED_ACTIVITY, 100);
-    frame.update(true);
+    frame.update(false);
+    unsigned int b = 0;
+    while(frame.is_busy()) {
+        frame.led(InkyFrame::LED_ACTIVITY, std::min(b, 200 - b));
+        b = (b + 5) % 200;
+        sleep_ms(75);
+    }
     frame.led(InkyFrame::LED_ACTIVITY, 0);
 }

@@ -174,7 +174,7 @@ int main() {
 
     lv_task_handler_callback();
 
-    inky_sleep(15); // sleep for 15 minutes
+    inky_sleep(30); // sleep for 30 minutes
     
     return 0;
 }

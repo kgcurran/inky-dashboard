@@ -119,15 +119,15 @@ static void draw_events(lv_obj_t *parent, std::vector<draw_record> &records) {
             }
         }
 
-        int overlapping = 0;
+        int first_overlap = n_columns;
 
         // counts the number of 'active' overlapping events
         for(auto r : que) {
             r->width = column_width;
-            ++overlapping;
+            if(r->column > record.column) first_overlap = std::min(first_overlap, r->column);
         }
 
-        record.width = (n_columns - overlapping) * column_width;
+        record.width = (first_overlap - record.column) * column_width;
         record.offset = record.column * column_width;
 
         que.push_back(&record);
