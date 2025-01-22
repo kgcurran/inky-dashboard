@@ -2,6 +2,7 @@
 #include "settings.hpp"
 #include "libraries/inky_frame_7/inky_frame_7.hpp"
 #include "pico/cyw43_arch.h"
+#include "hardware/watchdog.h"
 
 using namespace pimoroni;
 
@@ -24,7 +25,15 @@ void inky_flush_cb(lv_display_t * display, const lv_area_t * area, uint8_t * px_
 
 void inky_sleep(int wake_in_minutes) {
     frame.rtc.clear_timer_flag();
-    frame.sleep(wake_in_minutes);
+    if(wake_in_minutes != -1) {
+      frame.rtc.set_timer(wake_in_minutes, PCF85063A::TIMER_TICK_1_OVER_60HZ);
+      frame.rtc.enable_timer_interrupt(true, false);
+    }
+
+    gpio_put(HOLD_VSYS_EN, false);
+    sleep_ms(std::max(10'000, wake_in_minutes * 60 * 1000));
+    watchdog_reboot(0, 0, 0);
+    while(true) {}
 }
 
 int connect_wifi() {
@@ -59,12 +68,7 @@ int inky_init() {
 
 void lv_task_handler_callback() {
     lv_timer_handler();
-    frame.update(false);
-    unsigned int b = 0;
-    while(frame.is_busy()) {
-        frame.led(InkyFrame::LED_ACTIVITY, std::min(b, 200 - b));
-        b = (b + 5) % 200;
-        sleep_ms(75);
-    }
+    frame.led(InkyFrame::LED_ACTIVITY, 100);
+    frame.update();
     frame.led(InkyFrame::LED_ACTIVITY, 0);
 }
